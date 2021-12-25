@@ -1,0 +1,132 @@
+Exercise 1 (4 points): Using the a data set from the textbook, perhaps one of those
+mentioned in the ve exercises at the end of Chapter 1 (page 12), identify two variables
+for which a simple linear regression model seems appropriate based on residual analysis and
+other diagnostic methods. Complete each of the following steps:
+
+The 'prostate' data set from the Faraway library was choosen for analysis in this project. Cancer volume,
+transformed logorithmiclly was choosen as the prediction variable, denoted 'lcavol', and prostate weight
+transformed logorithmically and denoted 'lcp' was choosen as the response variable.
+
+(1) Compute point estimates of Beta1, Beta0, and sigma. Y = Beta0 + Beta1(x) + E
+A linear model was made of the predictor and response data using the lm() function in R-Studio. The point
+estimates of Beta1 = .80, Beta0 = -1.26, and sigma = 1.04.
+
+(2) Identify a predictor variable value in the range of your original data that is not
+actually sampled in your original data set; call this x*. Construct a point estimate
+of MewY|x=x*|
+
+4 was choosen as the unknown lcavol value. Plugging x*=4 into our model equation y = -1.26 + .80 * 4 yields
+a value of 1.94. So the estimated response of having cancer volume at a logarithmic level of 4 will be 
+1.94 logarithmic units of prostate weight based off of our model. 
+
+(3) Identify a confidence level of your choice and construct a confidence interval estimate
+of Beta1 that uses that confidence level. 
+
+Using a 95% confidence interval and the confint(linear model) function on R, we found the confidence interval
+estimate of Beta1 to be (.62,.98). Meaning we can say that there is a 95% that the true slope for modeling
+this data lies between .62 and .98 if our assumptions surrounding the model are correct. These numbers were
+confirmed by doing manual calculation of the confidence interval on R as well. 
+
+(4) Using the same confidence level, construct a confidence interval estimate of MewY|x=x*|
+The estimated reponse of an x*=4 according to our model equation is 1.94. Using R, a direct calculation of 
+a 95% CI at x*=4 was found to be (1.43,2.46) using the following lines of code:
+
+	xframe<-as.data.frame(4) 
+	colnames(xframe)<-"lcavol"
+	predict(mv.lm,xframe,interval="conf",level=.95) # This function produced the CI: (1.43, 2.46)
+
+This confidence interval was confirmed doing a manual calculation on R by using the nessisary formulas that
+calculate the mean of x, Sxx, response value, sd of residuals, and Syhat. This was done using the following R code:
+
+	xstar<- 4
+	mean.x<-mean(prostate$lcavol)
+	s.res<- sd(residuals(mv.lm)) #1.031255
+	sxx<-sum((prostate$lcavol-mean.x)^2)
+	ypred<-b0+b1*xstar
+	s.xstar<-s.res*(1/n.samp+(xstar-mean.x)^2/sxx)^.5
+	c(ypred-qt(1-.05/2,n.samp-2)*s.xstar,
+  	ypred+qt(1-.05/2,n.samp-2)*s.xstar) #<-produces the lower and upper bounds of CI
+
+(5) Using the same confidence level, construct a prediction interval for a new response
+variable value, y|x = x*|.
+
+Using the same methodology I desired to estimate a 95% prediction interval for a response of x*=5. At this
+response level we can say that 95% of the time the response will be between .57 and 4.91 units of prostate
+weight or, (.57,4.91) units of lcavol. This was found using the following code from R:
+	xframe<-as.data.frame(5)
+	colnames(xframe)<-"lcavol"
+	predict(mv.lm,xframe,interval="pred",level=.95)
+
+Exercise 2 (8 points): Consider the `prostate' data set from the textbook. Construct a
+linear model using `lcavol ' as a response variable and `lpsa ' as a response variable. Include
+each of the following steps.
+
+(1) Randomly partition the data set into a model calibration part consisting of 80% of
+the data set and a model validation component consisting of the other 20% of the
+data set.
+
+The prostate data was randomly partitioned into a model calibraion with 80% of the data contained
+in a variable called 'development' and a variable called 'holdout' consisting of the other 20%.
+
+(2) Compute point estimates of Beta1, Beta0, and sigma using the model calibration part of the
+data set.
+
+Constructing a linear model of the 'development' data set produced point estimates Beta1 = .73, Beta0 = 1.48, 
+and sigma = .74
+
+(3) Identify a confidence level of your choice and construct a confidence interval estimate
+of Beta1 using the model calibration part of the data set.
+
+For a confidence level of 95% the range for Beta1 is estimated between (.59,.88). Meaning that if our model 
+is correct there is 95% chance that the true slope for modeling this data lies between .59 to .88 units of
+lcp. This was found using confint(development.lm, level=.95) in R.
+
+(4) Construct a 95% prediction interval estimate of Mew|lcavol|lpsa for all of the lpsa values in
+your validation data set. What proportion of these prediction intervals capture the
+observed response?
+
+We used the following R code to find a 95% prediction interval estimate for all of the lpsa values in the
+smaller data set (n=20):
+	xframe<-as.data.frame(holdout$lpsa)
+	sample.lpsa.ci<-data.frame(predict(holdout.lm,xframe, interval="pred",level=.95))
+This was used to find the following output of prediction intervals:
+
+we then used the following R code to see if the response fell within each data sample's predictive range:
+	Observed.cavol<-data.frame(holdout$lcavol) #store actual response value in a data frame
+	range<-c(sample.lpsa.ci$lwr,sample.lpsa.ci$upr,Observed.cavol) #store lwr/upper bounds of lpsa in data.frame
+	Observed.cavol > range$lwr & Observed < range$upr #calculate if the response fell in that range. 
+
+Output:
+
+100% of the response's fell within the 95% predictive range. 
+
+(5) Plot a 95% confidence band computed from the model calibration part of the original
+data set on a scatterplot of that part of the calibration data set.
+
+(6) Plot a 95% confidence band computed from the model calibration part of the data set
+on a scatterplot of the model validation part of the data set that includes a regression
+line computed using the model validation part of the data set.
+
+Exercise 3 (8 points): Complete Textbook Exercise 2, parts (a), (b), (c) and (d) from
+Chapter 3 (page 49), stated as follows. Thirty samples of cheddar cheese were analyzed for
+their content of acetic acid, hydrogen sulfide and lactic acid. Each sample was tasted and
+scored by a panel of judges and the average taste score produced. Use the cheddar data to
+answer the following:
+ 
+(a) Fit a regression model with taste as the response and the three chemical con-tents as
+predictors. Identify the predictors that are statistically significant at the 5% level.
+
+(b) Acetic and H2S are measured on a log scale. Fit a linear model where all three pre-
+dictors are measured on their original scale. Identify the predictors that are statistically
+significant at the 5% level for this model.
+
+(c) (skip part (c) for now, part (c) addressed on future worksheet)
+
+(d) If H2S is increased 0.01 for the model used in (a), what change in the taste would
+be expected?
+
+(e) What is the percentage change in H2S on the original scale corresponding to an ad-
+ditive increase of 0.01 on the (natural) log scale?
+
+
+
